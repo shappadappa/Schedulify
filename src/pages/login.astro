@@ -1,0 +1,10 @@
+---
+import Layout from "../layouts/Layout.astro"
+import LoginForm from "../components/LoginForm"
+---
+
+<Layout title="Schedulify / Login">
+    <h1 class="text-4xl font-bold text-pink-50 border-b border-pink-50 pb-4 max-w-lg mx-auto">Login</h1>
+
+    <LoginForm client:load loggingIn={true} />
+</Layout>
