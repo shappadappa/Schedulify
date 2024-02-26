@@ -33,10 +33,10 @@ export default function LoginForm({ loggingIn }){
 
         const formData = new FormData(e.target)
 
-        if(loggingIn){
-            const email = formData.get("email")
-            const password = formData.get("password")
+        const email = formData.get("email")
+        const password = formData.get("password")
 
+        if(loggingIn){
             if(!email){
                 console.error("Email required")
                 return
@@ -49,7 +49,16 @@ export default function LoginForm({ loggingIn }){
             try{
                 await createSessionCookie(email, password)
             } catch(error){
-                console.error(error)
+                switch(error.code){
+                    case "auth/invalid-credential":
+                        console.error("Incorrect email or password")
+                        break
+                    case "auth/too-many-requests":
+                        console.error("Too many attempts to login. Try again later")
+                        break
+                    default:
+                        console.error(error.code)
+                }
             }
         } else{
             const res = await fetch(`/api/auth/signup`, {
@@ -58,9 +67,6 @@ export default function LoginForm({ loggingIn }){
             })
 
             if(res.ok){
-                window.location.reload(false)
-                window.location = "/"
-
                 await createSessionCookie(email, password)
             } else{
                 const json = await res.json()
