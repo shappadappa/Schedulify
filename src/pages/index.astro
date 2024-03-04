@@ -1,6 +1,6 @@
 ---
 import Layout from '../layouts/Layout.astro';
-import Timetable from "../components/Timetable"
+import Schedule from "../components/Schedule"
 import { db } from '../firebase/server';
 
 const activitiesRef = db.collection("activity")
@@ -12,6 +12,6 @@ const userActivities = (await activitiesRef.where("uid", "==", Astro.locals.user
 	<main class="text-2xl">
     	<h1 class="text-4xl font-bold text-pink-50 border-b border-pink-50 pb-4 max-w-lg mx-auto">My Schedule</h1>
 
-		<Timetable client:idle initialActivities={userActivities} />
+		<Schedule client:idle initialActivities={userActivities} />
 	</main>
 </Layout>

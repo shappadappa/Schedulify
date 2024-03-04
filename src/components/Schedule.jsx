@@ -1,15 +1,16 @@
 import { useEffect, useState } from "react"
 import Modal from "./Modal"
 
-export default function Timetable({ initialActivities }){
+export default function Schedule({ initialActivities }){
     const [activities, setActivities] = useState(new Map())
     const [editing, setEditing] = useState(false)
+    const [view, setView] = useState("month")
     const [fromDate, setFromDate] = useState("")
     const [toDate, setToDate] = useState("")
 
     const year = new Date().getFullYear()
     const month = new Date().getMonth() + 1
-    const day = new Date().getUTCDate()
+    const day = new Date().getDate()
 
     const lastDayOfMonth = new Date(year, month, 0).getUTCDate() + 1
 
@@ -24,6 +25,18 @@ export default function Timetable({ initialActivities }){
 
     const getDayNo = (weekDayNo, weekNo) =>{
         return weekNo === 0 ? weekDayNo + 1 : weekDayNo + mondayIndexes [weekNo - 1]
+    }
+
+    const addNumberSuffix = day =>{
+        if(day === 1){
+            return "st"
+        } else if(day === 2){
+            return "nd"
+        } else if(day === 3){
+            return "rd"
+        } else{
+            return "th"
+        }
     }
 
     const colSpans = ["col-span-1", "col-span-2", "col-span-3", "col-span-4", "col-span-5", "col-span-6"] // due to tailwind not supporting template literals
@@ -135,19 +148,55 @@ export default function Timetable({ initialActivities }){
             </Modal>
 
             <div className="relative max-w-4xl mx-auto my-8 rounded-lg p-6 grid-rows-8 bg-slate-100 text-slate-900 text-sm">
-                <div className="text-2xl text-left pb-6 font-semibold">{`${new Date().toLocaleDateString("default", {month: "long"})} ${new Date().toLocaleDateString("default", {year: "numeric"})}`}</div>
+                <div className="grid grid-rows-2 text-left gap-2 mb-4">
+                    <div className="text-2xl text-left font-semibold">{`${new Date().toLocaleDateString("default", {month: "long"})} ${new Date().toLocaleDateString("default", {year: "numeric"})}`}</div>
 
-                <div className="grid grid-cols-7 gap-1 font-semibold">
-                    <div className="p-2 bg-slate-300 rounded">Monday</div>
-                    <div className="p-2 bg-slate-300 rounded">Tuesday</div>
-                    <div className="p-2 bg-slate-300 rounded">Wednesday</div>
-                    <div className="p-2 bg-slate-300 rounded">Thursday</div>
-                    <div className="p-2 bg-slate-300 rounded">Friday</div>
-                    <div className="p-2 bg-slate-300 rounded">Saturday</div>
-                    <div className="p-2 bg-slate-300 rounded">Sunday</div>
+                    <div>
+                        <label className={`cursor-pointer transition-colors px-1 py-0.5 rounded ${view === "month" ? "bg-slate-500 text-slate-100" : ""}`} htmlFor="month">Month</label>
+                        <input onChange={e => setView(e.target.value)} value="month" className="hidden" type="radio" name="view" id="month" />
+
+                        <label className={`cursor-pointer transition-colors px-1 py-0.5 rounded ml-2 ${view === "week" ? "bg-slate-500 text-slate-100" : ""}`} htmlFor="week">Week</label>
+                        <input onChange={e => setView(e.target.value)} value="week" className="hidden" type="radio" name="view" id="week" />
+
+                        <label className={`cursor-pointer transition-colors px-1 py-0.5 rounded ml-2 ${view === "day" ? "bg-slate-500 text-slate-100" : ""}`} htmlFor="day">Day</label>
+                        <input onChange={e => setView(e.target.value)} value="day" className="hidden" type="radio" name="view" id="day" />
+                    </div>
                 </div>
 
-                {[...Array(6)].map((_, weekNo) =>(
+                <button onClick={() => setEditing(!editing)} className="absolute top-4 right-4 rounded-full bg-slate-600 p-3 text-white flex justify-center items-center" title="Edit Schedule">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
+                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
+                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
+                    </svg>
+                </button>
+
+                <div className="grid grid-cols-7 gap-1 font-semibold">
+                    {[...Array(7)].map((_, weekDayNo) =>(
+                        <div key={weekDayNo} className="p-2 bg-slate-300 rounded">
+                            <span>{new Date(2024, 0, weekDayNo + 1).toLocaleString('en-UK', {weekday: 'long'})} </span>
+
+                            {view === "week" && 
+                                <>
+                                    {mondayIndexes.filter(mondayIndex => mondayIndex <= day).length === 0 ?
+                                        <span>
+                                            {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0) > 0 && 
+                                                <>
+                                                    {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0)}{addNumberSuffix(mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0))}
+                                                </>
+                                            }
+                                        </span>
+                                    :
+                                        <span>
+                                            {getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) + addNumberSuffix(getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length))}
+                                        </span>
+                                    }
+                                </>
+                            }
+                        </div>
+                    ))}
+                </div>
+
+                {view === "month" && [...Array(6)].map((_, weekNo) =>(
                     <div className="grid grid-cols-7 gap-1 my-2" key={weekNo}>
                         {/* in case the first day of the month isn't a Monday, indent the first week */}
                         {weekNo === 0 && firstWeekIndent !== 0 && 
@@ -172,8 +221,8 @@ export default function Timetable({ initialActivities }){
                                                 </div>
                                             :
                                                 <div className="text-xxs grid grid-rows-2">
-                                                    <span>{activity.startTime}</span>
-                                                    <span>{activity.endTime}</span>
+                                                    <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, weekNo) == activity.endDay ? "00:00" : activity.startTime}</span>
+                                                    <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, weekNo) == activity.startDay ? "23:59" : activity.endTime}</span>
                                                 </div>
                                             }
                                         </div>
@@ -187,12 +236,33 @@ export default function Timetable({ initialActivities }){
                     </div>
                 ))}
 
-                <button onClick={() => setEditing(!editing)} className="absolute top-4 right-4 rounded-full bg-slate-600 p-3 text-white flex justify-center items-center" title="Edit Schedule">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="currentColor" viewBox="0 0 16 16">
-                        <path d="M15.502 1.94a.5.5 0 0 1 0 .706L14.459 3.69l-2-2L13.502.646a.5.5 0 0 1 .707 0l1.293 1.293zm-1.75 2.456-2-2L4.939 9.21a.5.5 0 0 0-.121.196l-.805 2.414a.25.25 0 0 0 .316.316l2.414-.805a.5.5 0 0 0 .196-.12l6.813-6.814z"/>
-                        <path fillRule="evenodd" d="M1 13.5A1.5 1.5 0 0 0 2.5 15h11a1.5 1.5 0 0 0 1.5-1.5v-6a.5.5 0 0 0-1 0v6a.5.5 0 0 1-.5.5h-11a.5.5 0 0 1-.5-.5v-11a.5.5 0 0 1 .5-.5H9a.5.5 0 0 0 0-1H2.5A1.5 1.5 0 0 0 1 2.5z"/>
-                    </svg>
-                </button>
+                {view === "week" && 
+                    <div className="grid grid-cols-7 gap-1 my-2">
+                        {mondayIndexes.filter(mondayIndex => mondayIndex <= day).length === 0 && firstWeekIndent !== 0 && <div className={colSpans [firstWeekIndent - 1]}></div>}
+
+                        {[...Array(mondayIndexes.filter(mondayIndex => mondayIndex <= day).length === 0 ? 7 - firstWeekIndent : 7)].map((_, weekDayNo) =>(
+                            <div key={weekDayNo} className={`bg-slate-200 text-xs rounded p-1.5 min-h-72 text-left ${day === getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) ? "border-2 border-slate-600 shadow shadow-slate-600" : "border border-slate-300"}`}>
+                                {getDayActivities(getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length))?.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((activity, activityIndex) =>(
+                                    <div className="border-l-2 border-l-slate-500 pl-2 my-1 flex justify-between items-center" key={activityIndex}>
+                                        {activity.activity}
+                                        {((activity.startDay != getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) && activity.endDay != getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length)) || (activity.startTime == "00:00" && activity.endTime == "23:59")) ?
+                                            <div title="All Day">
+                                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                                    <path d="M2.5 15a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1zm2-13v1c0 .537.12 1.045.337 1.5h6.326c.216-.455.337-.963.337-1.5V2zm3 6.35c0 .701-.478 1.236-1.011 1.492A3.5 3.5 0 0 0 4.5 13s.866-1.299 3-1.48zm1 0v3.17c2.134.181 3 1.48 3 1.48a3.5 3.5 0 0 0-1.989-3.158C8.978 9.586 8.5 9.052 8.5 8.351z"/>
+                                                </svg>
+                                            </div>
+                                        :
+                                            <div className="text-xxs grid grid-rows-2">
+                                                <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) == activity.endDay ? "00:00" : activity.startTime}</span>
+                                                <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) == activity.startDay ? "23:59" : activity.endTime}</span>
+                                            </div>
+                                        }
+                                    </div>
+                                ))}
+                            </div>
+                        ))}
+                    </div>
+                }
             </div>
         </>
     )
