@@ -149,7 +149,23 @@ export default function Schedule({ initialActivities }){
 
             <div className="relative max-w-4xl mx-auto my-8 rounded-lg p-6 grid-rows-8 bg-slate-100 text-slate-900 text-sm">
                 <div className="grid grid-rows-2 text-left gap-2 mb-4">
-                    <div className="text-2xl text-left font-semibold">{`${new Date().toLocaleDateString("default", {month: "long"})} ${new Date().toLocaleDateString("default", {year: "numeric"})}`}</div>
+                    {view === "month" &&
+                        <div className="text-2xl text-left font-semibold">
+                            {new Date().toLocaleDateString("default", {month: "long"})} {new Date().toLocaleDateString("default", {year: "numeric"})}
+                        </div>
+                    }
+
+                    {view === "week" &&
+                        <div className="text-2xl text-left font-semibold">
+                            {`${new Date().toLocaleDateString("default", {month: "long"})} ${new Date().toLocaleDateString("default", {year: "numeric"})} Week ${mondayIndexes.filter(mondayIndex => mondayIndex <= day).length + 1}`}
+                        </div>
+                    }
+
+                    {view === "day" && 
+                        <div className="text-2xl text-left font-semibold">
+                            {`${day}${addNumberSuffix(day)} ${new Date().toLocaleDateString("default", {month: "long"})} ${year}`}
+                        </div>
+                    }
 
                     <div>
                         <label className={`cursor-pointer transition-colors px-1 py-0.5 rounded ${view === "month" ? "bg-slate-500 text-slate-100" : ""}`} htmlFor="month">Month</label>
@@ -170,31 +186,37 @@ export default function Schedule({ initialActivities }){
                     </svg>
                 </button>
 
-                <div className="grid grid-cols-7 gap-1 font-semibold">
-                    {[...Array(7)].map((_, weekDayNo) =>(
-                        <div key={weekDayNo} className="p-2 bg-slate-300 rounded">
-                            <span>{new Date(2024, 0, weekDayNo + 1).toLocaleString('en-UK', {weekday: 'long'})} </span>
+                {view !== "day" ? 
+                    <div className="grid grid-cols-7 gap-1 font-semibold">
+                        {[...Array(7)].map((_, weekDayNo) =>(
+                            <div key={weekDayNo} className="p-2 bg-slate-300 rounded">
+                                <span>{new Date(2024, 0, weekDayNo + 1).toLocaleString('en-UK', {weekday: 'long'})} </span>
 
-                            {view === "week" && 
-                                <>
-                                    {mondayIndexes.filter(mondayIndex => mondayIndex <= day).length === 0 ?
-                                        <span>
-                                            {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0) > 0 && 
-                                                <>
-                                                    {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0)}{addNumberSuffix(mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0))}
-                                                </>
-                                            }
-                                        </span>
-                                    :
-                                        <span>
-                                            {getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) + addNumberSuffix(getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length))}
-                                        </span>
-                                    }
-                                </>
-                            }
-                        </div>
-                    ))}
-                </div>
+                                {view === "week" && 
+                                    <>
+                                        {mondayIndexes.filter(mondayIndex => mondayIndex <= day).length === 0 ?
+                                            <span>
+                                                {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0) > 0 && 
+                                                    <>
+                                                        {mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0)}{addNumberSuffix(mondayIndexes [0] - 8 +  getDayNo(weekDayNo, 0))}
+                                                    </>
+                                                }
+                                            </span>
+                                        :
+                                            <span>
+                                                {getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length) + addNumberSuffix(getDayNo(weekDayNo, mondayIndexes.filter(mondayIndex => mondayIndex <= day).length))}
+                                            </span>
+                                        }
+                                    </>
+                                }
+                            </div>
+                        ))}
+                    </div>
+                :
+                    <div className="font-semibold p-2 bg-slate-300 rounded">
+                        <span>{new Date().toLocaleString('en-UK', {weekday: 'long'})} {day + addNumberSuffix(day)}</span>
+                    </div>
+                }
 
                 {view === "month" && [...Array(6)].map((_, weekNo) =>(
                     <div className="grid grid-cols-7 gap-1 my-2" key={weekNo}>
@@ -260,6 +282,37 @@ export default function Schedule({ initialActivities }){
                                     </div>
                                 ))}
                             </div>
+                        ))}
+                    </div>
+                }
+
+                {view === "day" &&
+                    <div className="my-4 p-2 text-base">
+                        {getDayActivities(day).length === 0 && <p>No activities</p>}
+
+                        {getDayActivities(day)?.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((activity, activityIndex) =>(
+                            <>
+                                <div className={`border-l-2 border-l-slate-500 pl-2 ${activity.notes ? "mb-1" : "mb-4"} flex justify-between items-center`} key={activityIndex}>
+                                    {activity.activity}
+                                    {((activity.startDay != day && activity.endDay != day) || (activity.startTime == "00:00" && activity.endTime == "23:59")) ?
+                                        <div title="All Day">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                                <path d="M2.5 15a.5.5 0 1 1 0-1h1v-1a4.5 4.5 0 0 1 2.557-4.06c.29-.139.443-.377.443-.59v-.7c0-.213-.154-.451-.443-.59A4.5 4.5 0 0 1 3.5 3V2h-1a.5.5 0 0 1 0-1h11a.5.5 0 0 1 0 1h-1v1a4.5 4.5 0 0 1-2.557 4.06c-.29.139-.443.377-.443.59v.7c0 .213.154.451.443.59A4.5 4.5 0 0 1 12.5 13v1h1a.5.5 0 0 1 0 1zm2-13v1c0 .537.12 1.045.337 1.5h6.326c.216-.455.337-.963.337-1.5V2zm3 6.35c0 .701-.478 1.236-1.011 1.492A3.5 3.5 0 0 0 4.5 13s.866-1.299 3-1.48zm1 0v3.17c2.134.181 3 1.48 3 1.48a3.5 3.5 0 0 0-1.989-3.158C8.978 9.586 8.5 9.052 8.5 8.351z"/>
+                                            </svg>
+                                        </div>
+                                    :
+                                        <div className="text-sm">
+                                            <span>{activity.startDay !== activity.endDay && day == activity.endDay ? "00:00" : activity.startTime} - </span>
+                                            <span>{activity.startDay !== activity.endDay && day == activity.startDay ? "23:59" : activity.endTime}</span>
+                                        </div>
+                                    }
+                                </div>
+                                {activity.notes && 
+                                    <div className="text-sm text-left mt-1 ml-2 mb-4 bg-slate-200 rounded p-1.5">
+                                        {activity.notes}
+                                    </div>
+                                }
+                            </>
                         ))}
                     </div>
                 }
