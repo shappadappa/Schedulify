@@ -1,5 +1,6 @@
 import { Fragment, useEffect, useState } from "react"
 import Modal from "./Modal"
+import ErrorDropdown from "./ErrorDropdown"
 
 export default function Schedule({ initialActivities }){
     const [activitiesList, setActivitiesList] = useState(initialActivities)
@@ -8,6 +9,7 @@ export default function Schedule({ initialActivities }){
     const [view, setView] = useState("month")
     const [fromDate, setFromDate] = useState("")
     const [toDate, setToDate] = useState("")
+    const [error, setError] = useState("")
 
     const [year, setYear] = useState(new Date().getFullYear())
     const [month, setMonth] = useState(new Date().getMonth() + 1)
@@ -101,6 +103,7 @@ export default function Schedule({ initialActivities }){
     }
 
     const addActivity = async(e) =>{
+        setError("")
         e.preventDefault()
 
         const formData = new FormData(e.target)
@@ -140,7 +143,7 @@ export default function Schedule({ initialActivities }){
         } else{
             const json = await res.json()
 
-            console.error(json.error)
+            setError(json.error)
         }
     }
 
@@ -182,6 +185,8 @@ export default function Schedule({ initialActivities }){
 
     return(
         <>
+            <ErrorDropdown error={error} setError={setError}/>
+
             <Modal open={editing} setOpen={setEditing}>
                 <h4 className="mx-auto max-w-xs text-slate-800 text-2xl font-semibold pb-2 border-b border-pink-100">Add Activity</h4>
 
