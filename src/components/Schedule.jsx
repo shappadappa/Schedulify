@@ -5,6 +5,7 @@ import ErrorDropdown from "./ErrorDropdown"
 export default function Schedule({ initialActivities }){
     const [activitiesList, setActivitiesList] = useState(initialActivities)
     const [activitiesMap, setActivitiesMap] = useState(new Map())
+    const [seenActivity, setSeenActivity] = useState(false)
     const [editing, setEditing] = useState(false)
     const [view, setView] = useState("month")
     const [fromDate, setFromDate] = useState("")
@@ -59,6 +60,7 @@ export default function Schedule({ initialActivities }){
                 const endDay = endDate.toLocaleDateString("en-UK", {day: "2-digit"})
 
                 newActivitiesMap.set(`${startDay}/${endDay}`, [...newActivitiesMap.get(`${startDay}/${endDay}`) ?? [], {
+                    id: activity.id,
                     activity: activity.activity,
                     startDay: new Date(activity.fromDate).toLocaleDateString("en-UK", {day: "2-digit"}),
                     startTime: startDate.toLocaleTimeString("en-UK", {hour: '2-digit', minute: '2-digit', hour12: false}),
@@ -187,8 +189,27 @@ export default function Schedule({ initialActivities }){
         <>
             <ErrorDropdown error={error} setError={setError}/>
 
+            <Modal open={seenActivity} setOpen={setSeenActivity}>
+                <h4 className="mx-auto max-w-xs text-slate-800 text-2xl font-semibold pb-2 border-b border-slate-400">{seenActivity.activity}</h4>
+
+                <div className="my-4 mx-auto max-w-xs grid grid-cols-2 grid-rows-3 text-slate-600 place-items-center text-sm">
+                    <span className="text-xs">Starts</span>
+                    <span className="text-xs">Ends</span>
+
+                    <span>{new Date(seenActivity.fromDate).toLocaleDateString("en-UK", {day: "2-digit", month: "2-digit", year: "numeric"})}</span>
+                    <span>{new Date(seenActivity.toDate).toLocaleDateString("en-UK", {day: "2-digit", month: "2-digit", year: "numeric"})}</span>
+
+                    <span className="text-xs">{new Date(seenActivity.fromDate).toLocaleTimeString("en-UK", {hour: "2-digit", minute: "2-digit"})}</span>
+                    <span className="text-xs">{new Date(seenActivity.toDate).toLocaleTimeString("en-UK", {hour: "2-digit", minute: "2-digit"})}</span>
+                </div>
+
+                {seenActivity.notes &&
+                    <div className="mt-6 mx-auto max-w-xs bg-slate-300 p-2 rounded">{seenActivity.notes}</div>
+                }
+            </Modal>
+
             <Modal open={editing} setOpen={setEditing}>
-                <h4 className="mx-auto max-w-xs text-slate-800 text-2xl font-semibold pb-2 border-b border-pink-100">Add Activity</h4>
+                <h4 className="mx-auto max-w-xs text-slate-800 text-2xl font-semibold pb-2 border-b border-slate-400">Add Activity</h4>
 
                 <form onSubmit={e => addActivity(e)} className="text-slate-800 p-3 text-left">
                     <div className="mt-5">
@@ -300,8 +321,8 @@ export default function Schedule({ initialActivities }){
                         .map((_, weekDayNo) =>(
                             <div className={`bg-slate-200 text-xs rounded grid grid-cols-3 grid-rows-3 ${new Date().getFullYear() === year && new Date().getMonth() === month - 1 && new Date().getDate() === getDayNo(weekDayNo, weekNo) ? "border-2 border-slate-600 shadow shadow-slate-600" : "border border-slate-300"}`} key={getDayNo(weekDayNo, weekNo)}>
                                 <div className="col-span-3 row-span-2 row-start-2 px-2 text-left">
-                                    {getDayActivities(getDayNo(weekDayNo, weekNo))?.sort((a, b) => a.startTime.localeCompare(b.startTime)).slice(0, 2).map((activity, activityIndex) =>(
-                                        <div className="border-l-2 border-l-slate-500 pl-2 my-0.5 flex justify-between items-center" key={activityIndex}>
+                                    {getDayActivities(getDayNo(weekDayNo, weekNo))?.sort((a, b) => a.startTime.localeCompare(b.startTime)).slice(0, 2).map(activity =>(
+                                        <button onClick={() => setSeenActivity(activitiesList.filter(listedActivity => listedActivity.id === activity.id) [0])} className="w-full cursor-pointer border-l-2 border-l-slate-500 pl-2 my-0.5 flex justify-between items-center text-left" key={activity.id}>
                                             {activity.activity}
                                             {((activity.startDay != getDayNo(weekDayNo, weekNo) && activity.endDay != getDayNo(weekDayNo, weekNo)) || (activity.startTime == "00:00" && activity.endTime == "23:59")) ?
                                                 <div title="All Day">
@@ -315,7 +336,7 @@ export default function Schedule({ initialActivities }){
                                                     <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, weekNo) == activity.startDay ? "23:59" : activity.endTime}</span>
                                                 </div>
                                             }
-                                        </div>
+                                        </button>
                                     ))}
 
                                     {getDayActivities(getDayNo(weekDayNo, weekNo)).length > 2 && <div className="text-xxs font-semibold">and {getDayActivities(getDayNo(weekDayNo, weekNo)).length - 2} more</div>}
@@ -333,7 +354,7 @@ export default function Schedule({ initialActivities }){
                         {[...Array(week === 0 ? 7 - firstWeekIndent : 7)].map((_, weekDayNo) =>(
                             <div key={weekDayNo} className={`bg-slate-200 text-xs rounded p-1.5 min-h-72 text-left ${new Date().getFullYear() === year && new Date().getMonth() === month - 1 && new Date().getDate() === getDayNo(weekDayNo, week) ? "border-2 border-slate-600 shadow shadow-slate-600" : "border border-slate-300"}`}>
                                 {getDayActivities(getDayNo(weekDayNo, week))?.sort((a, b) => a.startTime.localeCompare(b.startTime)).map((activity, activityIndex) =>(
-                                    <div className="border-l-2 border-l-slate-500 pl-2 my-1 flex justify-between items-center" key={activityIndex}>
+                                    <button onClick={() => setSeenActivity(activitiesList.filter(listedActivity => listedActivity.id === activity.id) [0])} className="w-full text-left border-l-2 border-l-slate-500 pl-2 my-1 flex justify-between items-center" key={activityIndex}>
                                         {activity.activity}
                                         {((activity.startDay != getDayNo(weekDayNo, week) && activity.endDay != getDayNo(weekDayNo, week)) || (activity.startTime == "00:00" && activity.endTime == "23:59")) ?
                                             <div title="All Day">
@@ -347,7 +368,7 @@ export default function Schedule({ initialActivities }){
                                                 <span>{activity.startDay !== activity.endDay && getDayNo(weekDayNo, week) == activity.startDay ? "23:59" : activity.endTime}</span>
                                             </div>
                                         }
-                                    </div>
+                                    </button>
                                 ))}
                             </div>
                         ))}
